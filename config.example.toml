@@ -1,0 +1,12 @@
+[imap]
+server = "<imap server>"
+port = 993
+username = "<username>"
+password = "<password>"
+
+[pushover]
+user_key = "<user key>"
+api_token = "<api token>"
+
+[app]
+poll_interval_seconds = 30
