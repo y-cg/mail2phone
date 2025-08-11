@@ -1,12 +1,10 @@
-use std::net::TcpStream;
-
 use super::processor::Preprocessor;
 use crate::config::Config;
 use crate::notification::Notifier;
 use anyhow::{Context, Result};
-use native_tls::{TlsConnector, TlsStream};
+use imap::ImapConnection;
 
-type Session = imap::Session<TlsStream<TcpStream>>;
+type Session = imap::Session<Box<dyn ImapConnection>>;
 
 /// Responsible for polling the IMAP server and processing new emails.
 pub struct MailPoller<'a, N: Notifier, P: Preprocessor> {
@@ -25,16 +23,9 @@ impl<'a, N: Notifier, P: Preprocessor> MailPoller<'a, N, P> {
     }
 
     fn session(&self) -> Result<Session> {
-        let tls = TlsConnector::builder()
-            .build()
-            .context("Failed to build TLS connector")?;
-
-        let client = imap::connect(
-            (self.config.imap.server.as_str(), self.config.imap.port),
-            &self.config.imap.server,
-            &tls,
-        )
-        .context("Failed to connect to IMAP server")?;
+        let client = imap::ClientBuilder::new(&self.config.imap.server, self.config.imap.port)
+            .connect()
+            .context("Failed to connect to IMAP server")?;
 
         client
             .login(&self.config.imap.username, &self.config.imap.password)

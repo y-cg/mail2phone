@@ -39,9 +39,9 @@ impl Preprocessor for MailProcessor {
     fn preprocess(&self, fetch: &Fetch) -> Result<Self::Output> {
         let title = fetch
             .envelope()
-            .and_then(|env| env.subject)
+            .and_then(|env| env.subject.clone())
             // convert &[u8] to String
-            .map(|s| String::from_utf8_lossy(s).to_string())
+            .map(|s| String::from_utf8_lossy(s.as_ref()).to_string())
             .unwrap_or_else(|| "No Subject".to_string());
 
         let body = fetch
