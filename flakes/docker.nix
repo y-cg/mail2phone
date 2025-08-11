@@ -22,7 +22,11 @@
           self'.packages.mail2phone-static
         ];
         config = {
-          Entrypoint = [ "${self'.packages.mail2phone-static}/bin/mail2phone" ];
+          Entrypoint = [
+            "/bin/mail2phone"
+            "-c"
+            "/config/config.toml"
+          ];
           Env = [
             "RUST_LOG=info"
           ];
