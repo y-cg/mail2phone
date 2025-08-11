@@ -8,7 +8,7 @@
     }:
     let
       overlays = [ (import inputs.rust-overlay) ];
-      pkgs' = import inputs.nixpkgs { inherit system overlays; };
+      pkgs = import inputs.nixpkgs { inherit system overlays; };
 
       supportedSystems = [
         "x86_64-linux"
@@ -23,7 +23,7 @@
       };
       targetTriple = targetTriples.${system} or (throw "Unsupported system: ${system}");
 
-      craneLib = (inputs.crane.mkLib pkgs').overrideToolchain (
+      craneLib = (inputs.crane.mkLib pkgs).overrideToolchain (
         p:
         p.rust-bin.stable.latest.default.override {
           targets = [
