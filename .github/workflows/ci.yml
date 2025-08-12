@@ -130,6 +130,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Load and Push
+        if: github.event_name != 'pull_request'
         run: |
           docker load < result
           if [[ "${{ matrix.os }}" == *arm* ]]; then
