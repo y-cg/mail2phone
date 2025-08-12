@@ -1,12 +1,11 @@
 use crate::notification::Notification;
-use anyhow::{Context, Result};
-use imap::types::Fetch;
-use mail_parser::MessageParser;
+use anyhow::Result;
+use mail_parser::Message;
 
 pub trait Preprocessor {
     type Output: Notification;
     /// Process the email content before sending.
-    fn preprocess(&self, fetch: &Fetch) -> Result<Self::Output>;
+    fn preprocess(&self, msg: &Message) -> Result<Self::Output>;
 }
 
 pub struct MailProcessor {
@@ -37,15 +36,7 @@ impl MailProcessor {
 impl Preprocessor for MailProcessor {
     type Output = MailSummary;
 
-    fn preprocess(&self, fetch: &Fetch) -> Result<Self::Output> {
-        let body = fetch
-            .body()
-            .ok_or_else(|| anyhow::anyhow!("No body found in mail"))?;
-
-        let msg = MessageParser::default()
-            .parse(body)
-            .context("Fail to parse mail")?;
-
+    fn preprocess(&self, msg: &Message) -> Result<Self::Output> {
         let summary = MailSummary {
             title: msg
                 .subject()

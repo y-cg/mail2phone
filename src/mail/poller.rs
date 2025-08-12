@@ -3,6 +3,7 @@ use crate::config::Config;
 use crate::notification::Notifier;
 use anyhow::{Context, Result};
 use imap::ImapConnection;
+use mail_parser::MessageParser;
 
 type Session = imap::Session<Box<dyn ImapConnection>>;
 
@@ -78,8 +79,16 @@ impl<'a, N: Notifier, P: Preprocessor> MailPoller<'a, N, P> {
         let notifications = messages
             .iter()
             .map(|fetch| {
+                let body = fetch
+                    .body()
+                    .ok_or_else(|| anyhow::anyhow!("No body found in mail"))?;
+
+                let msg = MessageParser::default()
+                    .parse(body)
+                    .context("Fail to parse mail")?;
+
                 self.processor
-                    .preprocess(fetch)
+                    .preprocess(&msg)
                     .context("Failed to process email")
             })
             .collect::<Result<Vec<_>>>()?;
