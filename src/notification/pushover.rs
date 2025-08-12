@@ -1,5 +1,6 @@
 use crate::config::PushoverConfig;
-use anyhow::{Context, Result};
+use anyhow::Result;
+use pushover_rs::{send_pushover_request, MessageBuilder};
 
 use super::{Notification, Notifier};
 
@@ -20,25 +21,22 @@ impl Pushover {
 }
 
 impl Notifier for Pushover {
-    fn send_notification<T: Notification>(&self, item: &T) -> Result<()> {
-        let client = reqwest::blocking::Client::new();
-        let params = [
-            ("token", self.api_token.as_str()),
-            ("user", self.user_key.as_str()),
-            ("title", item.title()),
-            ("message", item.message()),
-        ];
+    async fn send_notification<T: Notification>(&self, item: &T) -> Result<()> {
+        let msg = MessageBuilder::new(&self.user_key, &self.api_token, item.message())
+            .set_title(item.title())
+            .build();
 
-        let resp = client
-            .post("https://api.pushover.net/1/messages.json")
-            .form(&params)
-            .send()
-            .context("Failed to send pushover request")?;
+        let resp = send_pushover_request(msg)
+            .await
+            .map_err(|e| anyhow::anyhow!("Pushover request failed: {}", e))?;
 
-        if resp.status().is_success() {
-            Ok(())
-        } else {
-            Err(anyhow::anyhow!("Pushover API error: {}", resp.status()))
+        if let Some(error) = resp.errors {
+            return Err(anyhow::anyhow!(
+                "Pushover API returned errors: {}",
+                error.join(", ")
+            ));
         }
+
+        Ok(())
     }
 }
