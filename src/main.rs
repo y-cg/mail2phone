@@ -10,7 +10,6 @@ use crate::config::Config;
 use crate::mail::poller::MailPoller;
 use crate::notification::Pushover;
 use anyhow::Result;
-use std::thread;
 use std::time::Duration;
 
 /// CLI arguments for mail2phone
@@ -22,7 +21,8 @@ struct Cli {
     config: String,
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     env_logger::init();
 
     // Parse CLI arguments
@@ -42,9 +42,9 @@ fn main() -> Result<()> {
 
     // Start polling loop
     loop {
-        if let Err(e) = poller.poll() {
+        if let Err(e) = poller.poll().await {
             eprintln!("Error: {:#}", e);
         }
-        thread::sleep(Duration::from_secs(config.app.poll_interval_seconds));
+        tokio::time::sleep(Duration::from_secs(config.app.poll_interval_seconds)).await;
     }
 }

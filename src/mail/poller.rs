@@ -33,18 +33,19 @@ impl<'a, N: Notifier, P: Preprocessor> MailPoller<'a, N, P> {
     }
 
     /// Polls the IMAP server and processes new unseen emails.
-    pub fn poll(&self) -> Result<()> {
+    pub async fn poll(&self) -> Result<()> {
         let mut session = self.session()?;
 
         let messages = self
             .unseen_emails(&mut session)
             .context("Failed to fetch unseen emails")?;
 
-        messages.iter().try_for_each(|item| {
+        for item in &messages {
             self.notifier
                 .send_notification(item)
-                .context("Failed to send notification")
-        })?;
+                .await
+                .context("Failed to send notification")?;
+        }
 
         // Ignoring logout errors is fine
         session.logout().ok();
