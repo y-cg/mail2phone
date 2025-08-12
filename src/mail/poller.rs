@@ -72,7 +72,7 @@ impl<'a, N: Notifier, P: Preprocessor> MailPoller<'a, N, P> {
         // Fetch messages and mark them as seen
         // (removing the \Seen flag happens automatically when fetching with RFC822)
         let messages = session
-            .fetch(&sequence_set, "RFC822")
+            .fetch(&sequence_set, "(RFC822)")
             .context("Failed to fetch unseen emails")?;
 
         let notifications = messages

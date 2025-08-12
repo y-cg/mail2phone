@@ -1,6 +1,7 @@
 use crate::notification::Notification;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use imap::types::Fetch;
+use mail_parser::MessageParser;
 
 pub trait Preprocessor {
     type Output: Notification;
@@ -37,21 +38,21 @@ impl Preprocessor for MailProcessor {
     type Output = MailSummary;
 
     fn preprocess(&self, fetch: &Fetch) -> Result<Self::Output> {
-        let title = fetch
-            .envelope()
-            .and_then(|env| env.subject.clone())
-            // convert &[u8] to String
-            .map(|s| String::from_utf8_lossy(s.as_ref()).to_string())
-            .unwrap_or_else(|| "No Subject".to_string());
-
         let body = fetch
             .body()
-            .map(|s| String::from_utf8_lossy(s).to_string())
-            .unwrap_or_else(|| "No Body".to_string());
+            .ok_or_else(|| anyhow::anyhow!("No body found in mail"))?;
+
+        let msg = MessageParser::default()
+            .parse(body)
+            .context("Fail to parse mail")?;
 
         let summary = MailSummary {
-            title,
-            message: body,
+            title: msg
+                .subject()
+                .map_or_else(|| "No Subject".to_string(), |s| s.to_string()),
+            message: msg
+                .body_text(0)
+                .map_or_else(|| "No Body".to_string(), |s| s.to_string()),
         };
 
         Ok(summary)
