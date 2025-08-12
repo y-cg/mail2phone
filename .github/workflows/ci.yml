@@ -122,3 +122,15 @@ jobs:
 
       - name: Build Packages (docker) / ${{ matrix.os }}
         run: nix build .#mail2phone-image
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Load and Push
+        run: |
+          docker load < result
+          docker tag mail2phone-image:latest ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest
