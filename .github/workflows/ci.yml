@@ -132,5 +132,10 @@ jobs:
       - name: Load and Push
         run: |
           docker load < result
-          docker tag mail2phone-image:latest ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest
-          docker push ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest
+          if [[ "${{ matrix.os }}" == *arm* ]]; then
+            docker tag mail2phone-image:latest ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-arm64
+            docker push ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-arm64
+          else
+            docker tag mail2phone-image:latest ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-amd64
+            docker push ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-amd64
+          fi
