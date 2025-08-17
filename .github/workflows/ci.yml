@@ -48,12 +48,15 @@ jobs:
         run: nix build .#mail2phone
 
   build-static-binary:
+    name: Build Static Binary (${{ matrix.target }})
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-latest
-          - ubuntu-24.04-arm
+        target:
+          - x86_64
+          - aarch64
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -82,16 +85,19 @@ jobs:
           # except the version with the `primary-key`, if it exists
           purge-primary-key: never
 
-      - name: Build Packages (static) / ${{ matrix.os }}
-        run: nix build .#mail2phone-static
+      - name: Build Packages (static)
+        run: nix build .#mail2phone-static-${{ matrix.target }}
 
   build-docker-image:
+    name: Build Docker Image (${{ matrix.arch }})
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-latest
-          - ubuntu-24.04-arm
+        arch:
+          - x86_64
+          - aarch64
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -120,8 +126,8 @@ jobs:
           # except the version with the `primary-key`, if it exists
           purge-primary-key: never
 
-      - name: Build Packages (docker) / ${{ matrix.os }}
-        run: nix build .#mail2phone-image
+      - name: Build Packages (docker)
+        run: nix build .#mail2phone-image-${{ matrix.arch }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -133,10 +139,5 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           docker load < result
-          if [[ "${{ matrix.os }}" == *arm* ]]; then
-            docker tag mail2phone-image:latest ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-arm64
-            docker push ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-arm64
-          else
-            docker tag mail2phone-image:latest ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-amd64
-            docker push ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-amd64
-          fi
+          docker tag mail2phone-image:latest ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-${{ matrix.arch }}
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-${{ matrix.arch }}

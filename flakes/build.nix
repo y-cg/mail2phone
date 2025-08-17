@@ -30,7 +30,6 @@
       );
     in
     {
-      checks.mail2phone = mail2phone;
       packages.mail2phone = mail2phone;
       packages.default = mail2phone;
     };
