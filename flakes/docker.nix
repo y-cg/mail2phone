@@ -24,6 +24,13 @@
               "RUST_LOG=info"
             ];
           };
+          architecture =
+            if arch == "x86_64" then
+              "amd64"
+            else if arch == "aarch64" then
+              "arm64"
+            else
+              throw "Unsupported architecture: ${arch}";
         };
       mkDockerPackages =
         { name }:
