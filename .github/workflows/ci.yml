@@ -129,15 +129,49 @@ jobs:
       - name: Build Packages (docker)
         run: nix build .#mail2phone-image-${{ matrix.arch }}
 
+      - name: Save Docker image as tar
+        run: |
+          docker load < result
+          docker tag mail2phone-image:latest mail2phone:latest-${{ matrix.arch }}
+          docker save mail2phone:latest-${{ matrix.arch }} -o mail2phone-latest-${{ matrix.arch }}.tar
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mail2phone-latest-${{ matrix.arch }}
+          path: mail2phone-latest-${{ matrix.arch }}.tar
+
+  docker-manifest:
+    name: Create & Push Docker Manifest
+    needs:
+      - build-docker-image
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Download Docker image artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Load and Push
-        if: github.event_name != 'pull_request'
+      - name: Load and push images
         run: |
-          docker load < result
-          docker tag mail2phone-image:latest ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-${{ matrix.arch }}
-          docker push ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-${{ matrix.arch }}
+          docker load -i ./artifacts/mail2phone-latest-x86_64/mail2phone-latest-x86_64.tar
+          docker load -i ./artifacts/mail2phone-latest-aarch64/mail2phone-latest-aarch64.tar
+          docker tag mail2phone:latest-x86_64 ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-amd64
+          docker tag mail2phone:latest-aarch64 ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-arm64
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-amd64
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-arm64
+
+      - name: Create and push manifest
+        run: |
+          docker manifest create ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest \
+            --amend ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-amd64 \
+            --amend ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest-arm64
+          docker manifest push ${{ vars.DOCKERHUB_USERNAME }}/mail2phone:latest
