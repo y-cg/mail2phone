@@ -72,7 +72,7 @@ jobs:
           # restore and save a cache using this key
           primary-key: nix-static-${{ matrix.target }}-${{ hashFiles('**/*.nix') }}
           # if there's no cache hit, restore a cache by this prefix
-          restore-prefixes-first-match: nix-${{ matrix.os }}-
+          restore-prefixes-first-match: nix-static-${{ matrix.target }}
           # collect garbage until Nix store size (in bytes) is at most this number
           # before trying to save a new cache
           gc-max-store-size-linux: 1073741824
@@ -113,7 +113,7 @@ jobs:
           # restore and save a cache using this key
           primary-key: nix-docker-${{ matrix.target }}-${{ hashFiles('**/*.nix') }}
           # if there's no cache hit, restore a cache by this prefix
-          restore-prefixes-first-match: nix-${{ matrix.os }}-
+          restore-prefixes-first-match: nix-docker-${{ matrix.target }}
           # collect garbage until Nix store size (in bytes) is at most this number
           # before trying to save a new cache
           gc-max-store-size-linux: 1073741824
