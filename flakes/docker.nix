@@ -13,6 +13,7 @@
           tag = "latest";
           copyToRoot = [
             self'.packages."mail2phone-static-${arch}"
+            pkgs.cacert
           ];
           config = {
             Entrypoint = [
@@ -22,6 +23,7 @@
             ];
             Env = [
               "RUST_LOG=info"
+              "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
             ];
           };
           architecture =
