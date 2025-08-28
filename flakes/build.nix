@@ -7,25 +7,18 @@
       ...
     }:
     let
+      inherit (import ../nix/lib) mkFormula;
       craneLib = inputs.crane.mkLib pkgs;
 
       # Common arguments for building
-      commonArgs = {
-        src = craneLib.cleanCargoSource ../.;
-        strictDeps = true;
-        buildInputs =
-          [
-            # Add extra build inputs if needed
-          ]
-          ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-            pkgs.libiconv
-          ];
+      formula = mkFormula {
+        inherit pkgs craneLib;
       };
 
       mail2phone = craneLib.buildPackage (
-        commonArgs
+        formula
         // {
-          cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+          cargoArtifacts = craneLib.buildDepsOnly formula;
         }
       );
     in
